@@ -89,6 +89,7 @@ class CustomerRepository
             ->where('role', 'user')
             ->withCount('orders')
             ->withSum('orders as orders_total', 'total')
+            ->with('latestDigitalOrder')
             ->with(['pointTransactions' => function ($q) {
                 $q->latest()->limit(10);
             }])
@@ -242,6 +243,7 @@ class CustomerRepository
                     $sub->where('vendor_id', $vendorId);
                 });
             }], 'total')
+            ->with('latestDigitalOrder')
             ->find($userId);
     }
 

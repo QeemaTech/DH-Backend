@@ -125,6 +125,11 @@ class User extends Authenticatable
         return $this->hasMany(DigitalOrder::class);
     }
 
+    public function latestDigitalOrder()
+    {
+        return $this->hasOne(DigitalOrder::class)->latestOfMany();
+    }
+
     public function vendor()
     {
         // Return cached vendor if available (set by View Composer or previous call)
