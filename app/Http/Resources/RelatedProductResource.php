@@ -14,12 +14,14 @@ class RelatedProductResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        $locale = app()->getLocale();
+
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'name' => $this->getTranslation('name', $locale, false) ?? $this->getTranslation('name', 'en', false),
             'slug' => $this->slug,
             'thumb_image' => $this->main_image,
-            'description' => $this->description,
+            'description' => $this->getTranslation('description', $locale, false) ?? $this->getTranslation('description', 'en', false),
             'discount' => $this->discount,
             'discount_type' => $this->discount_type,
             'is_active' => $this->is_active,

@@ -17,6 +17,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class ProductController extends Controller
@@ -156,10 +157,16 @@ class ProductController extends Controller
 
             return redirect()->route('vendor.products.index')
                 ->with('success', __('Product created successfully.'));
+        } catch (ValidationException $e) {
+            $message = $e->validator->errors()->first('variations')
+                ?: $e->validator->errors()->first()
+                ?: __('Unable to save product. Please review variation SKUs and try again.');
+
+            return redirect()->route('vendor.products.create')
+                ->with('error', $message);
         } catch (\Exception $e) {
-            return redirect()->back()
-                ->withInput()
-                ->with('error', __('Failed to create product: :error', ['error' => $e->getMessage()]));
+            return redirect()->route('vendor.products.create')
+                ->with('error', __('Unable to save product. Please review variation SKUs and try again.'));
         }
     }
 
@@ -375,10 +382,12 @@ class ProductController extends Controller
 
             return redirect()->route('vendor.products.index')
                 ->with('success', __('Product updated successfully.'));
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', __('Failed to update product: :error', ['error' => $e->getMessage()]));
+                ->with('error', __('Unable to update product. Please review variation SKUs and try again.'));
         }
     }
 

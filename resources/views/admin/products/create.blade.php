@@ -26,6 +26,14 @@
     <div class="container-fluid p-4 p-lg-4">
 
         <!-- Success/Error Messages -->
+        @if (session('error'))
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                {{ session('error') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        @endif
+
         @if ($errors->any())
             <div class="alert alert-danger alert-dismissible fade show" role="alert">
                 <i class="bi bi-exclamation-circle me-2"></i>
@@ -792,7 +800,7 @@
 
 @push('scripts')
     <script>
-        document.addEventListener('alpine:init', () => {
+        const registerAdminProductWizard = () => {
             Alpine.data('productWizard', () => ({
                 currentStep: 1,
                 totalSteps: 5,
@@ -1353,6 +1361,14 @@
                     return this.validateCurrentStep();
                 }
             }));
-        });
+        };
+
+        if (window.Alpine) {
+            registerAdminProductWizard();
+        } else {
+            document.addEventListener('alpine:init', registerAdminProductWizard, {
+                once: true
+            });
+        }
     </script>
 @endpush

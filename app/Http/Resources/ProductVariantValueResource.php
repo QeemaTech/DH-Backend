@@ -13,9 +13,11 @@ class ProductVariantValueResource extends JsonResource
      */
     public function toArray($request): array
     {
+        $locale = app()->getLocale();
+
         return [
             'id' => $this->id,
-            'value' => $this->value,
+            'value' => $this->getTranslation('value', $locale, false) ?? $this->getTranslation('value', 'en', false),
             'variant_option_id' => $this->variant_option_id,
             'variant_option' => new VariantOptionResource($this->whenLoaded('variantOption')),
         ];

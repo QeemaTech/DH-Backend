@@ -13,9 +13,11 @@ class ProductVariantResource extends JsonResource
      */
     public function toArray($request): array
     {
+        $locale = app()->getLocale();
+
         return [
             'id' => $this->id,
-            'name' => $this->name,
+            'name' => $this->getTranslation('name', $locale, false) ?? $this->getTranslation('name', 'en', false),
             'slug' => $this->slug,
             'sku' => $this->sku,
             'stock' => $this->stock ?? 0,
