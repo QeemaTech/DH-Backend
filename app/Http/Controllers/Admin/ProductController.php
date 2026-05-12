@@ -21,6 +21,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -107,16 +108,22 @@ class ProductController extends Controller
      */
     public function store(CreateRequest $request): RedirectResponse
     {
-        // try {
-        $this->service->createProduct($request);
+        try {
+            $this->service->createProduct($request);
 
-        return redirect()->route('admin.products.index')
-            ->with('success', __('Product created successfully.'));
-        // } catch (\Exception $e) {
-        //     return redirect()->back()
-        //         ->withInput()
-        //         ->with('error', __('Failed to create product: :error', ['error' => $e->getMessage()]));
-        // }
+            return redirect()->route('admin.products.index')
+                ->with('success', __('Product created successfully.'));
+        } catch (ValidationException $e) {
+            $message = $e->validator->errors()->first('variations')
+                ?: $e->validator->errors()->first()
+                ?: __('Unable to save product. Please review variation SKUs and try again.');
+
+            return redirect()->route('admin.products.create')
+                ->with('error', $message);
+        } catch (\Exception $e) {
+            return redirect()->route('admin.products.create')
+                ->with('error', __('Unable to save product. Please review variation SKUs and try again.'));
+        }
     }
 
     /**
@@ -257,10 +264,12 @@ class ProductController extends Controller
 
             return redirect()->route('admin.products.index')
                 ->with('success', __('Product updated successfully.'));
+        } catch (ValidationException $e) {
+            throw $e;
         } catch (\Exception $e) {
             return redirect()->back()
                 ->withInput()
-                ->with('error', __('Failed to update product: :error', ['error' => $e->getMessage()]));
+                ->with('error', __('Unable to update product. Please review variation SKUs and try again.'));
         }
     }
 

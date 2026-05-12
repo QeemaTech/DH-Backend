@@ -51,7 +51,9 @@ Route::post('/auth/resend-verification-code', [AuthController::class, 'resendVer
     // ->middleware('throttle:3,1')
     ->name('api.resend-verification-code');
 
-Route::get('/countries', [CountryController::class, 'index'])->name('api.countries.index');
+Route::get('/countries', [CountryController::class, 'index'])
+    ->middleware('locale')
+    ->name('api.countries.index');
 
 Route::post('/auth/reset-password/send-code', [ResetPasswordController::class, 'resetPasswordSendCode'])
     // ->middleware('throttle:5,1')

@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
 class ProductService
 {
@@ -159,6 +160,7 @@ class ProductService
 
             // Handle variations for variable products
             if ($product->type === 'variable' && $request->has('variations')) {
+                $this->validateVariationSkus($product, $request->variations);
                 $this->syncProductVariations($product, $request->variations);
             }
 
@@ -256,6 +258,7 @@ class ProductService
 
             // Handle variations for variable products (check request type, not product type)
             if ($productType === 'variable' && $request->has('variations')) {
+                $this->validateVariationSkus($product, $request->variations);
                 $this->syncProductVariations($product, $request->variations);
             }
 
@@ -508,6 +511,46 @@ class ProductService
         $variationsToDelete = array_diff($existingVariationIds, $updatedVariationIds);
         if (! empty($variationsToDelete)) {
             ProductVariant::whereIn('id', $variationsToDelete)->delete();
+        }
+    }
+
+    /**
+     * Validate variation SKUs in a single bulk query to avoid N+1 checks.
+     */
+    protected function validateVariationSkus(Product $product, array $variations): void
+    {
+        $skus = collect($variations)
+            ->pluck('sku')
+            ->filter(fn ($sku) => is_string($sku) && trim($sku) !== '')
+            ->map(fn ($sku) => trim($sku))
+            ->values();
+
+        if ($skus->isEmpty()) {
+            return;
+        }
+
+        $duplicateSkusInRequest = $skus
+            ->countBy(fn ($sku) => mb_strtolower($sku))
+            ->filter(fn ($count) => $count > 1)
+            ->keys();
+
+        if ($duplicateSkusInRequest->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'variations' => __('Each variation must have a unique SKU. Please change duplicate SKUs.'),
+            ]);
+        }
+
+        $existingSkus = ProductVariant::query()
+            ->whereIn('sku', $skus->all())
+            ->where('product_id', '!=', $product->id)
+            ->pluck('sku');
+
+        if ($existingSkus->isNotEmpty()) {
+            throw ValidationException::withMessages([
+                'variations' => __('The following variation SKUs are already used: :skus. Please change them.', [
+                    'skus' => $existingSkus->unique()->implode(', '),
+                ]),
+            ]);
         }
     }
 

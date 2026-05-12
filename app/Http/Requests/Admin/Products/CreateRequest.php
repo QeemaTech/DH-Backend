@@ -48,6 +48,18 @@ class CreateRequest extends FormRequest
             'country_ids.*' => ['integer', 'exists:countries,id'],
             'images' => ['nullable', 'array'],
             'images.*' => ['image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:5120'],
+            'variations' => ['nullable', 'array'],
+            'variations.*.name' => ['nullable', 'array'],
+            'variations.*.name.en' => ['nullable', 'string', 'max:255'],
+            'variations.*.name.ar' => ['nullable', 'string', 'max:255'],
+            'variations.*.sku' => ['nullable', 'string', 'max:255'],
+            'variations.*.price' => ['nullable', 'numeric', 'min:0'],
+            'variations.*.thumbnail' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:5120'],
+            'variations.*.values' => ['nullable', 'array'],
+            'variations.*.values.*.variant_id' => ['nullable', 'integer', 'exists:variants,id'],
+            'variations.*.values.*.option_id' => ['nullable', 'integer', 'exists:variant_options,id'],
+            'variations.*.branch_stocks' => ['nullable', 'array'],
+            'variations.*.branch_stocks.*' => ['nullable', 'integer', 'min:0'],
         ];
     }
 
