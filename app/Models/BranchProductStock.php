@@ -1,0 +1,74 @@
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class BranchProductStock extends Model
+{
+    protected $table = 'branch_product_stocks';
+
+    protected $fillable = [
+        'branch_id',
+        'product_id',
+        'quantity',
+    ];
+
+    public function branch()
+    {
+        return $this->belongsTo(Branch::class);
+    }
+
+    public function product()
+    {
+        return $this->belongsTo(Product::class);
+    }
+
+    /**
+     * Scope a query to only include in-stock items
+     */
+    public function scopeInStock($query)
+    {
+        return $query->where('quantity', '>', 0);
+    }
+
+    /**
+     * Scope a query to only include out-of-stock items
+     */
+    public function scopeOutOfStock($query)
+    {
+        return $query->where('quantity', '<=', 0);
+    }
+
+    /**
+     * Scope a query by branch
+     */
+    public function scopeByBranch($query, $branchId)
+    {
+        return $query->where('branch_id', $branchId);
+    }
+
+    /**
+     * Scope a query by product
+     */
+    public function scopeByProduct($query, $productId)
+    {
+        return $query->where('product_id', $productId);
+    }
+
+    /**
+     * Check if stock is available
+     */
+    public function isInStock(): bool
+    {
+        return $this->quantity > 0;
+    }
+
+    /**
+     * Check if stock is low (less than threshold)
+     */
+    public function isLowStock(int $threshold = 10): bool
+    {
+        return $this->quantity > 0 && $this->quantity <= $threshold;
+    }
+}

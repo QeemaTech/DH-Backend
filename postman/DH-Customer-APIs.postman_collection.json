@@ -1,0 +1,647 @@
+{
+  "info": {
+    "_postman_id": "9a6b9b21-1d3e-4f6c-9d33-0ed3a94b0f01",
+    "name": "DH - Customer APIs",
+    "description": "Customer-facing API requests for the DH Laravel backend.\n\nHow to use:\n- Set collection variables: base_url, token, country_id, locale\n- Run Auth → Login first (or Register), then set token.\n\nNotes:\n- Most endpoints require the 'locale' middleware; this collection sets Accept-Language by default.\n- Protected endpoints use Bearer token (Sanctum).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://dh.test" },
+    { "key": "token", "value": "" },
+    { "key": "country_id", "value": "" },
+    { "key": "locale", "value": "en" },
+    { "key": "product_id", "value": "" },
+    { "key": "vendor_id", "value": "" },
+    { "key": "category_id", "value": "" },
+    { "key": "digital_product_id", "value": "" },
+    { "key": "order_id", "value": "" },
+    { "key": "address_id", "value": "" },
+    { "key": "ticket_id", "value": "" },
+    { "key": "invoice_id", "value": "" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Default headers for all requests",
+          "pm.request.headers.upsert({ key: 'Accept', value: 'application/json' });",
+          "pm.request.headers.upsert({ key: 'Accept-Language', value: pm.collectionVariables.get('locale') || 'en' });",
+          "",
+          "// Attach Bearer token if present",
+          "const token = pm.collectionVariables.get('token');",
+          "if (token && token.trim() !== '') {",
+          "  pm.request.headers.upsert({ key: 'Authorization', value: `Bearer ${token}` });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "description": "Authentication & account flows.",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test User\",\n  \"email\": \"test@example.com\",\n  \"phone\": \"555000\",\n  \"password\": \"password\",\n  \"password_confirmation\": \"password\",\n  \"country_id\": {{country_id}}\n}\n"
+            },
+            "url": { "raw": "{{base_url}}/api/auth/register", "host": ["{{base_url}}"], "path": ["api", "auth", "register"] }
+          }
+        },
+        {
+          "name": "Login (sets token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "",
+                  "// Try common token shapes",
+                  "const json = pm.response.json();",
+                  "const token = json.token || json.access_token || (json.data && (json.data.token || json.data.access_token));",
+                  "if (token) {",
+                  "  pm.collectionVariables.set('token', token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"password\"\n}\n"
+            },
+            "url": { "raw": "{{base_url}}/api/auth/login", "host": ["{{base_url}}"], "path": ["api", "auth", "login"] }
+          }
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/logout", "host": ["{{base_url}}"], "path": ["api", "logout"] }
+          }
+        },
+        {
+          "name": "Get current user",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/user", "host": ["{{base_url}}"], "path": ["api", "user"] }
+          }
+        },
+        {
+          "name": "Verify email",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"test@example.com\",\n  \"code\": \"123456\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/auth/verify-email", "host": ["{{base_url}}"], "path": ["api", "auth", "verify-email"] }
+          }
+        },
+        {
+          "name": "Verify phone",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"phone\": \"555000\",\n  \"code\": \"123456\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/auth/verify-phone", "host": ["{{base_url}}"], "path": ["api", "auth", "verify-phone"] }
+          }
+        },
+        {
+          "name": "Resend verification code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"channel\": \"email\",\n  \"email\": \"test@example.com\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/auth/resend-verification-code", "host": ["{{base_url}}"], "path": ["api", "auth", "resend-verification-code"] }
+          }
+        },
+        {
+          "name": "Reset password - send code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"test@example.com\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/auth/reset-password/send-code", "host": ["{{base_url}}"], "path": ["api", "auth", "reset-password", "send-code"] }
+          }
+        },
+        {
+          "name": "Reset password - verify code",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"test@example.com\",\n  \"code\": \"123456\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/auth/reset-password/verify-code", "host": ["{{base_url}}"], "path": ["api", "auth", "reset-password", "verify-code"] }
+          }
+        },
+        {
+          "name": "Reset password - set new password",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"email\": \"test@example.com\",\n  \"code\": \"123456\",\n  \"password\": \"new-password\",\n  \"password_confirmation\": \"new-password\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/auth/reset-password/set-new-password", "host": ["{{base_url}}"], "path": ["api", "auth", "reset-password", "set-new-password"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Meta",
+      "description": "Reference data used by the app.",
+      "item": [
+        {
+          "name": "Countries",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/countries", "host": ["{{base_url}}"], "path": ["api", "countries"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalog",
+      "description": "Public catalog browsing endpoints.",
+      "item": [
+        {
+          "name": "Categories (index)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/categories", "host": ["{{base_url}}"], "path": ["api", "categories"] }
+          }
+        },
+        {
+          "name": "Categories (show)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/categories/{{category_id}}", "host": ["{{base_url}}"], "path": ["api", "categories", "{{category_id}}"] }
+          }
+        },
+        {
+          "name": "Vendors (index)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/vendors", "host": ["{{base_url}}"], "path": ["api", "vendors"] }
+          }
+        },
+        {
+          "name": "Vendors (show)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/vendors/{{vendor_id}}", "host": ["{{base_url}}"], "path": ["api", "vendors", "{{vendor_id}}"] }
+          }
+        },
+        {
+          "name": "Sliders (index)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/sliders", "host": ["{{base_url}}"], "path": ["api", "sliders"] }
+          }
+        },
+        {
+          "name": "Products (index) - with country",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/products?country_id={{country_id}}&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products"],
+              "query": [
+                { "key": "country_id", "value": "{{country_id}}" },
+                { "key": "per_page", "value": "15" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Products (show) - with country",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/products/{{product_id}}?country_id={{country_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "products", "{{product_id}}"],
+              "query": [{ "key": "country_id", "value": "{{country_id}}" }]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Digital",
+      "description": "Digital products + digital ordering flow.",
+      "item": [
+        {
+          "name": "Digital products (index) - with country",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/digital-products?country_id={{country_id}}&per_page=15",
+              "host": ["{{base_url}}"],
+              "path": ["api", "digital-products"],
+              "query": [
+                { "key": "country_id", "value": "{{country_id}}" },
+                { "key": "per_page", "value": "15" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Digital products (show) - with country",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/digital-products/{{digital_product_id}}?country_id={{country_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "digital-products", "{{digital_product_id}}"],
+              "query": [{ "key": "country_id", "value": "{{country_id}}" }]
+            }
+          }
+        },
+        {
+          "name": "Create digital order (single product) [AUTH]",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"digital_product_id\": {{digital_product_id}}\n}\n" },
+            "url": { "raw": "{{base_url}}/api/digital-orders", "host": ["{{base_url}}"], "path": ["api", "digital-orders"] }
+          }
+        },
+        {
+          "name": "Capture IP (signed link from email)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/digital-orders/{{order_id}}/capture-ip?expires=REPLACE&signature=REPLACE",
+              "host": ["{{base_url}}"],
+              "path": ["api", "digital-orders", "{{order_id}}", "capture-ip"],
+              "query": [
+                { "key": "expires", "value": "REPLACE" },
+                { "key": "signature", "value": "REPLACE" }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Profile & Security [AUTH]",
+      "item": [
+        {
+          "name": "Profile (show)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/profile", "host": ["{{base_url}}"], "path": ["api", "profile"] }
+          }
+        },
+        {
+          "name": "Profile (update)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Updated Name\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/profile", "host": ["{{base_url}}"], "path": ["api", "profile"] }
+          }
+        },
+        {
+          "name": "Password (update)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"current_password\": \"password\",\n  \"password\": \"new-password\",\n  \"password_confirmation\": \"new-password\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/password", "host": ["{{base_url}}"], "path": ["api", "password"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Addresses [AUTH]",
+      "item": [
+        {
+          "name": "Addresses (index)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/addresses", "host": ["{{base_url}}"], "path": ["api", "addresses"] }
+          }
+        },
+        {
+          "name": "Addresses (store)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"title\": \"Home\",\n  \"address\": \"My address\",\n  \"latitude\": 29.3,\n  \"longitude\": 47.9\n}\n" },
+            "url": { "raw": "{{base_url}}/api/addresses", "host": ["{{base_url}}"], "path": ["api", "addresses"] }
+          }
+        },
+        {
+          "name": "Addresses (destroy)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/addresses/{{address_id}}", "host": ["{{base_url}}"], "path": ["api", "addresses", "{{address_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Favorites [AUTH]",
+      "item": [
+        {
+          "name": "Favorite list",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/favorite-list", "host": ["{{base_url}}"], "path": ["{{base_url}}"] }
+          }
+        },
+        {
+          "name": "Toggle favorite (product)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/products/{{product_id}}/toggle-favorite", "host": ["{{base_url}}"], "path": ["api", "products", "{{product_id}}", "toggle-favorite"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Cart [AUTH]",
+      "item": [
+        {
+          "name": "Cart (index)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/cart", "host": ["{{base_url}}"], "path": ["api", "cart"] }
+          }
+        },
+        {
+          "name": "Cart (add product)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/cart/{{product_id}}", "host": ["{{base_url}}"], "path": ["api", "cart", "{{product_id}}"] }
+          }
+        },
+        {
+          "name": "Cart (update quantity)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"quantity\": 2\n}\n" },
+            "url": { "raw": "{{base_url}}/api/cart/{{product_id}}", "host": ["{{base_url}}"], "path": ["api", "cart", "{{product_id}}"] }
+          }
+        },
+        {
+          "name": "Cart (remove product)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/cart/{{product_id}}", "host": ["{{base_url}}"], "path": ["api", "cart", "{{product_id}}"] }
+          }
+        },
+        {
+          "name": "Cart (clear)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/cart", "host": ["{{base_url}}"], "path": ["api", "cart"] }
+          }
+        },
+        {
+          "name": "Cart (apply coupon)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"coupon_code\": \"TEST\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/cart/apply-coupon", "host": ["{{base_url}}"], "path": ["api", "cart", "apply-coupon"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Orders [AUTH]",
+      "item": [
+        {
+          "name": "Orders (index)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/orders", "host": ["{{base_url}}"], "path": ["api", "orders"] }
+          }
+        },
+        {
+          "name": "Orders (show)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/orders/{{order_id}}", "host": ["{{base_url}}"], "path": ["api", "orders", "{{order_id}}"] }
+          }
+        },
+        {
+          "name": "Orders (store)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"address_id\": {{address_id}},\n  \"coupon_id\": null,\n  \"use_wallet\": false,\n  \"use_points\": false,\n  \"notes\": null\n}\n" },
+            "url": { "raw": "{{base_url}}/api/orders", "host": ["{{base_url}}"], "path": ["api", "orders"] }
+          }
+        },
+        {
+          "name": "Orders (calculate shipping)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"address_id\": {{address_id}}\n}\n" },
+            "url": { "raw": "{{base_url}}/api/orders/calculate-shipping", "host": ["{{base_url}}"], "path": ["api", "orders", "calculate-shipping"] }
+          }
+        },
+        {
+          "name": "Orders (cancel)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/orders/{{order_id}}/cancel", "host": ["{{base_url}}"], "path": ["api", "orders", "{{order_id}}", "cancel"] }
+          }
+        },
+        {
+          "name": "Orders (reorder)",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{base_url}}/api/orders/{{order_id}}/reorder", "host": ["{{base_url}}"], "path": ["api", "orders", "{{order_id}}", "reorder"] }
+          }
+        },
+        {
+          "name": "Orders (pay)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"payment_method\": \"sadad\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/orders/{{order_id}}/pay", "host": ["{{base_url}}"], "path": ["api", "orders", "{{order_id}}", "pay"] }
+          }
+        },
+        {
+          "name": "Orders (refund request)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"I want a refund\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/orders/{{order_id}}/refund-request", "host": ["{{base_url}}"], "path": ["api", "orders", "{{order_id}}", "refund-request"] }
+          }
+        },
+        {
+          "name": "Orders (rate order)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/orders/{{order_id}}/rate", "host": ["{{base_url}}"], "path": ["api", "orders", "{{order_id}}", "rate"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Payments (Sadad) [AUTH]",
+      "item": [
+        {
+          "name": "Create Sadad payment link",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"order_id\": {{order_id}}\n}\n" },
+            "url": { "raw": "{{base_url}}/api/payments/sadad/link", "host": ["{{base_url}}"], "path": ["api", "payments", "sadad", "link"] }
+          }
+        },
+        {
+          "name": "Show Sadad invoice",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/payments/invoices/{{invoice_id}}", "host": ["{{base_url}}"], "path": ["api", "payments", "invoices", "{{invoice_id}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Transactions [AUTH]",
+      "item": [
+        {
+          "name": "Wallet history",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/wallet/history", "host": ["{{base_url}}"], "path": ["api", "wallet", "history"] }
+          }
+        },
+        {
+          "name": "Points history",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/points/history", "host": ["{{base_url}}"], "path": ["api", "points", "history"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Ratings & Reports [AUTH]",
+      "item": [
+        {
+          "name": "Rate product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/products/{{product_id}}/rate", "host": ["{{base_url}}"], "path": ["api", "products", "{{product_id}}", "rate"] }
+          }
+        },
+        {
+          "name": "Rate vendor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"rating\": 5,\n  \"comment\": \"Great\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/vendors/{{vendor_id}}/rate", "host": ["{{base_url}}"], "path": ["api", "vendors", "{{vendor_id}}", "rate"] }
+          }
+        },
+        {
+          "name": "Report product",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Issue\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/products/{{product_id}}/report", "host": ["{{base_url}}"], "path": ["api", "products", "{{product_id}}", "report"] }
+          }
+        },
+        {
+          "name": "Report vendor",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"reason\": \"Issue\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/vendors/{{vendor_id}}/report", "host": ["{{base_url}}"], "path": ["api", "vendors", "{{vendor_id}}", "report"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tickets [AUTH]",
+      "item": [
+        {
+          "name": "Tickets (index)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/tickets", "host": ["{{base_url}}"], "path": ["api", "tickets"] }
+          }
+        },
+        {
+          "name": "Tickets (store)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"subject\": \"Help\",\n  \"message\": \"I need help\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/tickets", "host": ["{{base_url}}"], "path": ["api", "tickets"] }
+          }
+        },
+        {
+          "name": "Tickets (show)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{base_url}}/api/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["api", "tickets", "{{ticket_id}}"] }
+          }
+        },
+        {
+          "name": "Tickets (update)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"subject\": \"Updated\",\n  \"message\": \"Updated message\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["api", "tickets", "{{ticket_id}}"] }
+          }
+        },
+        {
+          "name": "Tickets (destroy)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{base_url}}/api/tickets/{{ticket_id}}", "host": ["{{base_url}}"], "path": ["api", "tickets", "{{ticket_id}}"] }
+          }
+        },
+        {
+          "name": "Tickets (add message)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"message\": \"New message\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/tickets/{{ticket_id}}/add-message", "host": ["{{base_url}}"], "path": ["api", "tickets", "{{ticket_id}}", "add-message"] }
+          }
+        },
+        {
+          "name": "Tickets (update status)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"closed\"\n}\n" },
+            "url": { "raw": "{{base_url}}/api/tickets/{{ticket_id}}/update-status", "host": ["{{base_url}}"], "path": ["api", "tickets", "{{ticket_id}}", "update-status"] }
+          }
+        }
+      ]
+    }
+  ]
+}
+
