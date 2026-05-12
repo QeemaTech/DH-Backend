@@ -32,6 +32,7 @@
                         <p class="mb-1"><strong>{{ __('Name') }}:</strong> {{ $customer->name }}</p>
                         <p class="mb-1"><strong>{{ __('Email') }}:</strong> {{ $customer->email ?? '-' }}</p>
                         <p class="mb-1"><strong>{{ __('Phone') }}:</strong> {{ $customer->phone ?? '-' }}</p>
+                        <!-- <p class="mb-1"><strong>{{ __('Digital Order IP') }}:</strong> {{ $customer->latestDigitalOrder?->user_ip_address ?? '-' }}</p> -->
                         <p class="mb-1">
                             <strong>{{ __('Orders Count (for this vendor)') }}:</strong>
                             <span class="badge bg-secondary">{{ $customer->orders_count_for_vendor ?? 0 }}</span>
@@ -96,4 +97,3 @@
         </div>
     </div>
 @endsection
-

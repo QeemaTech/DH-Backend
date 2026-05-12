@@ -52,6 +52,10 @@
                             <strong>{{ __('Points') }}:</strong>
                             {{ $customer->points }}
                         </p>
+                        <p class="mb-4">
+                            <strong>{{ __('Digital Order IP') }}:</strong>
+                            {{ $customer->latestDigitalOrder?->user_ip_address ?? '-' }}
+                        </p>
                         <p class="mb-0">
                             <strong>{{ __('Joined At') }}:</strong>
                             <small class="text-muted">{{ optional($customer->created_at)->format('Y-m-d H:i') }}</small>
