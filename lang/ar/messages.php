@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 return [
     ' Owner Account' => 'حساب المالك',
@@ -1133,4 +1133,84 @@ return [
     'subcategories. Deleting it will also delete all subcategories.' => 'الفئات الفرعية. سيؤدي حذفها أيضًا إلى حذف جميع الفئات الفرعية.',
     'times' => 'مرات',
     'Welcome back! Here\'s what\'s happening with your marketplace.' => 'مرحبًا بعودتك! إليك ما يحدث في سوقك.',
-];
+    'shipping_ui' => [
+    'sidebar_section' => 'إدارة الشحن',
+    'sidebar_countries' => 'الدول',
+    'sidebar_states' => 'المناطق / المحافظات',
+    'sidebar_cities' => 'المدن',
+
+    'system_countries_verification' => 'التحقق حسب الدولة',
+    'system_countries_subtitle' => 'حدد قناة التحقق لكل دولة حسب طريقة التحقق المطلوبة، مثل الرسائل النصية SMS أو البريد الإلكتروني أو كلاهما.',
+
+    'countries_title' => 'إدارة الدول',
+    'countries_subtitle' => 'إضافة وتعديل الدول المتاحة داخل النظام.',
+
+    'states_title' => 'إدارة المناطق / المحافظات',
+    'states_subtitle' => 'إضافة المناطق أو المحافظات التابعة لكل دولة.',
+
+    'cities_title' => 'إدارة المدن',
+    'cities_subtitle' => 'إضافة المدن وتحديد تكلفة الشحن لكل مدينة.',
+
+    'add_country' => 'إضافة دولة',
+    'edit_country' => 'تعديل الدولة',
+
+    'add_state' => 'إضافة منطقة / محافظة',
+    'edit_state' => 'تعديل المنطقة / المحافظة',
+
+    'add_city' => 'إضافة مدينة',
+    'edit_city' => 'تعديل المدينة',
+
+    'code' => 'الكود',
+    'name' => 'الاسم',
+    'name_en' => 'الاسم بالإنجليزية',
+    'name_ar' => 'الاسم بالعربية',
+
+    'dial_code' => 'كود الاتصال',
+    'channel' => 'قناة التحقق',
+    'verification_channel' => 'قناة التحقق',
+
+    'status' => 'الحالة',
+    'status_active' => 'نشط',
+    'status_inactive' => 'غير نشط',
+
+    'sort' => 'الترتيب',
+    'sort_order' => 'ترتيب العرض',
+
+    'actions' => 'الإجراءات',
+
+    'country' => 'الدولة',
+    'state' => 'المنطقة / المحافظة',
+    'city' => 'المدينة',
+
+    'shipping_cost' => 'تكلفة الشحن',
+
+    'all_countries' => 'كل الدول',
+    'all_states' => 'كل المناطق / المحافظات',
+    'all_statuses' => 'كل الحالات',
+
+    'search_country_placeholder' => 'ابحث باسم الدولة أو الكود أو كود الاتصال...',
+    'search_state_placeholder' => 'ابحث باسم المنطقة / المحافظة...',
+    'search_city_placeholder' => 'ابحث باسم المدينة...',
+
+    'filter' => 'تصفية',
+    'reset' => 'إعادة تعيين',
+    'go' => 'تنفيذ',
+    'clear' => 'X',
+
+    'edit' => 'تعديل',
+    'delete' => 'حذف',
+    'save' => 'حفظ',
+    'cancel' => 'إلغاء',
+
+    'select_country' => 'اختر الدولة',
+    'select_state' => 'اختر المنطقة / المحافظة',
+
+    'confirm_delete_country' => 'هل أنت متأكد من حذف هذه الدولة؟',
+    'confirm_delete_state' => 'هل أنت متأكد من حذف هذه المنطقة / المحافظة؟',
+    'confirm_delete_city' => 'هل أنت متأكد من حذف هذه المدينة؟',
+
+    'no_countries_found' => 'لا توجد دول.',
+    'no_states_found' => 'لا توجد مناطق / محافظات.',
+    'no_cities_found' => 'لا توجد مدن.',
+],
+    ];

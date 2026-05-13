@@ -239,12 +239,34 @@
                         </li>
 
                         <li class="nav-item mt-3">
+                            <small class="text-muted px-3 text-uppercase fw-bold">{{ __('messages.shipping_ui.sidebar_section') }}</small>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.shipping-countries*') ? 'active' : '' }}" href="{{ route('admin.shipping-countries.index') }}">
+                                <i class="bi bi-globe2"></i>
+                                <span>{{ __('messages.shipping_ui.sidebar_countries') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.states*') ? 'active' : '' }}" href="{{ route('admin.states.index') }}">
+                                <i class="bi bi-diagram-2"></i>
+                                <span>{{ __('messages.shipping_ui.sidebar_states') }}</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.cities*') ? 'active' : '' }}" href="{{ route('admin.cities.index') }}">
+                                <i class="bi bi-building"></i>
+                                <span>{{ __('messages.shipping_ui.sidebar_cities') }}</span>
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item mt-3">
                             <small class="text-muted px-3 text-uppercase fw-bold">{{ __('System') }}</small>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('admin.countries*') ? 'active' : '' }}" href="{{ route('admin.countries.index') }}">
                                 <i class="bi bi-globe2"></i>
-                                <span>{{ __('Countries & verification') }}</span>
+                                <span>{{ __('messages.shipping_ui.system_countries_verification') }}</span>
                             </a>
                         </li>
                         <li class="nav-item">
@@ -253,6 +275,7 @@
                                 <span>{{ __('Settings') }}</span>
                             </a>
                         </li>
+
                         <li class="nav-item">
                             <a class="nav-link {{ request()->routeIs('security*') ? 'active' : '' }}" href="{{ route('security') }}">
                                 <i class="bi bi-shield-check"></i>

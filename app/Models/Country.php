@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Enums\VerificationChannel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Country extends Model
@@ -38,6 +39,11 @@ class Country extends Model
     public function digitalProducts(): BelongsToMany
     {
         return $this->belongsToMany(DigitalProduct::class, 'country_digital_product');
+    }
+
+    public function states(): HasMany
+    {
+        return $this->hasMany(State::class);
     }
 
     public function scopeActive($query)
