@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\VendorController;
 use App\Http\Controllers\Admin\VendorRatingController;
 use App\Http\Controllers\Admin\VendorReportController;
 use App\Http\Controllers\Admin\ContactMessageController;
+use App\Http\Controllers\Admin\FraudReportController as AdminFraudReportController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\CategoryRequestController;
 use App\Http\Controllers\DemaRedirectController;
@@ -194,6 +195,9 @@ Route::group(['middleware' => 'locale'], function () {
             Route::post('vendor-ratings/{vendorRating}/toggle-visibility', [VendorRatingController::class, 'toggleVisibility'])->name('vendor-ratings.toggle-visibility');
             Route::get('vendor-reports', [VendorReportController::class, 'index'])->name('vendor-reports.index');
             Route::post('vendor-reports/{vendorReport}/status/{status}', [VendorReportController::class, 'updateStatus'])->name('vendor-reports.update-status');
+            Route::get('fraud-reports', [AdminFraudReportController::class, 'index'])->name('fraud-reports.index');
+            Route::get('fraud-reports/{fraudReport}', [AdminFraudReportController::class, 'show'])->name('fraud-reports.show');
+            Route::post('fraud-reports/{fraudReport}', [AdminFraudReportController::class, 'update'])->name('fraud-reports.update');
 
         });
 
@@ -394,3 +398,4 @@ Route::group(['middleware' => 'locale'], function () {
     require_once 'auth.php';
 
 });
+

@@ -23,6 +23,7 @@ use App\Http\Controllers\Api\SliderController;
 use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\ContactMessageController;
+use App\Http\Controllers\Api\FraudReportController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -203,6 +204,7 @@ Route::group(['middleware' => 'locale'], function () {
     
     // Contact us (public)
     Route::post('/contact-us', [ContactMessageController::class, 'store'])->middleware('throttle:10,1')->name('api.contact-us.store');
+    Route::post('/fraud-reports', [FraudReportController::class, 'store'])->middleware('throttle:5,1')->name('api.fraud-reports.store');
 
     // Category routes
     Route::apiResource('/categories', CategoryController::class)->only(['index', 'show']);
@@ -249,3 +251,4 @@ Route::group(['middleware' => 'locale'], function () {
 Route::post('sadad/webhook', [\App\Http\Controllers\PaymentController::class, 'SadadWebhook']);
 Route::post('tabby/webhook', [\App\Http\Controllers\PaymentController::class, 'TabbyWebhook']);
 Route::post('dema/webhook', [\App\Http\Controllers\PaymentController::class, 'DemaWebhook']);
+
