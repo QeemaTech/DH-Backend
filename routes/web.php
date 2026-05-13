@@ -1,6 +1,9 @@
 <?php
 
 use App\Http\Controllers\Admin\CountryController;
+use App\Http\Controllers\Admin\ShippingCountryController;
+use App\Http\Controllers\Admin\StateController;
+use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DigitalCategoryController;
 use App\Http\Controllers\Admin\DigitalMerchantController;
@@ -76,6 +79,10 @@ Route::group(['middleware' => 'locale'], function () {
 
             Route::get('/countries', [CountryController::class, 'index'])->name('countries.index');
             Route::put('/countries/{country}', [CountryController::class, 'update'])->name('countries.update');
+
+            Route::resource('shipping-countries', ShippingCountryController::class)->except(['show']);
+            Route::resource('states', StateController::class)->except(['show']);
+            Route::resource('cities', CityController::class)->except(['show']);
 
             // Categories Routes
             Route::get('categories/export', [CategoryController::class, 'export'])->name('categories.export');
@@ -398,4 +405,3 @@ Route::group(['middleware' => 'locale'], function () {
     require_once 'auth.php';
 
 });
-

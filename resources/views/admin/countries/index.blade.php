@@ -4,18 +4,18 @@
     $page = 'countries';
 @endphp
 
-@section('title', __('Countries & verification'))
+@section('title', __('messages.shipping_ui.system_countries_verification'))
 
 @section('content')
     <div class="container-fluid p-4 p-lg-4">
         <nav aria-label="breadcrumb" class="mb-2">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('admin.dashboard') }}">{{ __('Dashboard') }}</a></li>
-                <li class="breadcrumb-item active">{{ __('Countries & verification') }}</li>
+                <li class="breadcrumb-item active">{{ __('messages.shipping_ui.system_countries_verification') }}</li>
             </ol>
         </nav>
-        <h1 class="h3 mb-1">{{ __('Countries & verification') }}</h1>
-        <p class="text-muted mb-4">{{ __('Choose how new customers receive their signup code (SMS, WhatsApp, or email) per country.') }}</p>
+        <h1 class="h3 mb-1">{{ __('messages.shipping_ui.system_countries_verification') }}</h1>
+        <p class="text-muted mb-4">{{ __('messages.shipping_ui.system_countries_subtitle') }}</p>
 
         @if (session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
