@@ -192,6 +192,12 @@
                                 <span>{{ __('Vendor Reports') }}</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.fraud-reports*') ? 'active' : '' }}" href="{{ route('admin.fraud-reports.index') }}">
+                                <i class="bi bi-shield-exclamation"></i>
+                                <span>{{ __('Fraud Reports') }}</span>
+                            </a>
+                        </li>
                         <li class="nav-item mt-3">
                             <small class="text-muted px-3 text-uppercase fw-bold">{{ __('Analytics') }}</small>
                         </li>
