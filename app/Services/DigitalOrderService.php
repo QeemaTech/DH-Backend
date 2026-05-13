@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Mail\DigitalOrderIpConfirmationMail;
+use App\Models\City;
+use App\Models\State;
 use App\Models\DigitalOrder;
 use App\Models\DigitalOrderItem;
 use App\Models\DigitalProduct;
@@ -22,7 +24,14 @@ class DigitalOrderService
         protected Like4AppService $like4AppService,
     ) {}
 
-    public function createSingleProductOrder(User $user, DigitalProduct $digitalProduct, string $ipAddress): DigitalOrder
+    public function createSingleProductOrder(
+        User $user,
+        DigitalProduct $digitalProduct,
+        string $ipAddress,
+        int $stateId,
+        int $cityId,
+        int $countryId
+    ): DigitalOrder
     {
         if (! $digitalProduct->is_active || ! $digitalProduct->is_available) {
             throw ValidationException::withMessages([
@@ -39,8 +48,31 @@ class DigitalOrderService
         $this->assertUserProfileComplete($user);
         $this->assertProviderAvailability($digitalProduct);
 
-        return DB::transaction(function () use ($user, $digitalProduct, $ipAddress) {
+        return DB::transaction(function () use ($user, $digitalProduct, $ipAddress, $stateId, $cityId, $countryId) {
             $countryCode = $user->country?->code ?? '';
+            $state = State::query()
+                ->where('id', $stateId)
+                ->where('country_id', $countryId)
+                ->where('is_active', true)
+                ->first();
+            if (! $state) {
+                throw ValidationException::withMessages([
+                    'state_id' => [__('Invalid state for selected country.')],
+                ]);
+            }
+            $city = City::query()
+                ->where('id', $cityId)
+                ->where('country_id', $countryId)
+                ->where('state_id', $stateId)
+                ->where('is_active', true)
+                ->first();
+            if (! $city) {
+                throw ValidationException::withMessages([
+                    'city_id' => [__('City not found for selected country.')],
+                ]);
+            }
+            $shippingCost = round((float) $city->shipping_cost, 2);
+            $subtotal = round((float) $digitalProduct->price, 2);
 
             $order = DigitalOrder::create([
                 'user_id' => $user->id,
@@ -59,10 +91,10 @@ class DigitalOrderService
                 'payment_status' => 'pending',
                 'status' => 'pending',
                 'notes' => '',
-                'total' => $digitalProduct->price,
+                'total' => $subtotal,
                 'discount' => 0,
-                'shipping_cost' => 0,
-                'total_cost' => $digitalProduct->price,
+                'shipping_cost' => $shippingCost,
+                'total_cost' => round($subtotal + $shippingCost, 2),
             ]);
 
             DigitalOrderItem::create([
@@ -340,4 +372,3 @@ class DigitalOrderService
         Mail::to($order->user_email)->send(new DigitalOrderIpConfirmationMail($order, $url));
     }
 }
-

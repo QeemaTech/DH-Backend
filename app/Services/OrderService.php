@@ -7,6 +7,8 @@ use App\Models\Branch;
 use App\Models\BranchProductStock;
 use App\Models\BranchProductVariantStock;
 use App\Models\Coupon;
+use App\Models\City;
+use App\Models\State;
 use App\Models\Order;
 use App\Models\OrderLog;
 use App\Models\PointTransaction;
@@ -366,7 +368,7 @@ class OrderService
      *   }>
      * }
      */
-    public function calculateShippingCost(int $userId, int $addressId): array
+    public function calculateShippingCost(int $userId, int $addressId, int $stateId, int $cityId, int $countryId): array
     {
         $user = User::query()->findOrFail($userId);
 
@@ -438,8 +440,8 @@ class OrderService
                 continue;
             }
 
-            // Calculate shipping cost
-            $shippingCost = $this->calculateVendorShipping($vendorId, $branch, $address, $vendorSubtotal);
+            // Legacy per-vendor distance shipping is kept below but not used by this new flow.
+            $shippingCost = 0.0;
 
             // Get vendor settings for free shipping threshold
             $settings = VendorSetting::query()
@@ -455,14 +457,6 @@ class OrderService
             $minForFree = (float) ($settings['minimum_order_amount_for_free_shipping']->value ?? 0);
             $isFreeShipping = $allowFreeThreshold && $vendorSubtotal >= $minForFree;
 
-            // Calculate distance
-            $distance = $this->distanceKm(
-                (float) $address->latitude,
-                (float) $address->longitude,
-                (float) ($branch->latitude ?? 0),
-                (float) ($branch->longitude ?? 0)
-            );
-
             $vendor = \App\Models\Vendor::query()->find($vendorId);
 
             $vendorShippingData[] = [
@@ -470,18 +464,27 @@ class OrderService
                 'vendor_name' => $vendor?->name ?? __('Vendor #:id', ['id' => $vendorId]),
                 'branch_id' => $branch->id,
                 'branch_name' => $branch->name,
-                'distance_km' => round($distance, 2),
+                'distance_km' => 0.0,
                 'shipping_cost' => round($shippingCost, 2),
                 'subtotal' => round($vendorSubtotal, 2),
                 'free_shipping_threshold' => $allowFreeThreshold ? round($minForFree, 2) : null,
                 'is_free_shipping' => $isFreeShipping,
             ];
 
-            $totalShipping += $shippingCost;
+            $totalShipping += 0.0;
+        }
+
+        $cityShippingCost = $this->resolveCityShippingCost($stateId, $cityId, $countryId);
+        $vendorCount = count($vendorShippingData);
+        if ($vendorCount > 0) {
+            $allocated = $this->allocateShippingAcrossVendors($cityShippingCost, $vendorCount);
+            foreach ($vendorShippingData as $index => $vendorEntry) {
+                $vendorShippingData[$index]['shipping_cost'] = $allocated[$index] ?? 0.0;
+            }
         }
 
         return [
-            'total_shipping' => round($totalShipping, 2),
+            'total_shipping' => round($cityShippingCost, 2),
             'vendors' => $vendorShippingData,
         ];
     }
@@ -650,11 +653,17 @@ class OrderService
 
                 $vendorData[$vendorId]['branch_id'] = $branch->id;
 
-                // 6. Calculate Shipping Costs (vendor settings based)
-                $vendorData[$vendorId]['shipping_cost'] = $this->calculateVendorShipping($vendorId, $branch, $address, (float) $vData['subtotal']);
+                // Legacy per-vendor distance shipping is kept below but not used by this new flow.
+                $vendorData[$vendorId]['shipping_cost'] = 0.0;
             }
-
-            $totalShipping = array_sum(array_map(fn ($v) => (float) $v['shipping_cost'], $vendorData));
+            $cityShippingCost = $this->resolveCityShippingCost((int) $data['state_id'], (int) $data['city_id'], (int) $data['country_id']);
+            $allocatedShipping = $this->allocateShippingAcrossVendors($cityShippingCost, count($vendorData));
+            $vendorIndex = 0;
+            foreach ($vendorData as $vendorId => $vData) {
+                $vendorData[$vendorId]['shipping_cost'] = $allocatedShipping[$vendorIndex] ?? 0.0;
+                $vendorIndex++;
+            }
+            $totalShipping = round($cityShippingCost, 2);
 
             // Vendor order totals (subtotal - discount + shipping)
             foreach ($vendorData as $vendorId => $vData) {
@@ -1033,6 +1042,56 @@ class OrderService
                 }
             }
         }
+    }
+
+    private function resolveCityShippingCost(int $stateId, int $cityId, int $countryId): float
+    {
+        $state = State::query()
+            ->where('id', $stateId)
+            ->where('country_id', $countryId)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $state) {
+            throw ValidationException::withMessages([
+                'state_id' => [__('Invalid state for selected country.')],
+            ]);
+        }
+
+        $city = City::query()
+            ->where('id', $cityId)
+            ->where('country_id', $countryId)
+            ->where('state_id', $stateId)
+            ->where('is_active', true)
+            ->first();
+
+        if (! $city) {
+            throw ValidationException::withMessages([
+                'city_id' => [__('City not found for selected country.')],
+            ]);
+        }
+
+        return round((float) $city->shipping_cost, 2);
+    }
+
+    /**
+     * Split order-level shipping across vendor orders while preserving exact total.
+     *
+     * @return array<int, float>
+     */
+    private function allocateShippingAcrossVendors(float $totalShipping, int $vendorCount): array
+    {
+        if ($vendorCount <= 0) {
+            return [];
+        }
+
+        $perVendor = round($totalShipping / $vendorCount, 2);
+        $allocations = array_fill(0, $vendorCount, $perVendor);
+        $allocatedSum = round(array_sum($allocations), 2);
+        $delta = round($totalShipping - $allocatedSum, 2);
+        $allocations[$vendorCount - 1] = round($allocations[$vendorCount - 1] + $delta, 2);
+
+        return $allocations;
     }
 
     private function calculateVendorShipping(int $vendorId, Branch $branch, Address $address, float $vendorSubtotal): float

@@ -13,6 +13,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Services\DigitalOrderService;
 use App\Services\PaymentService;
+use App\Support\CountryHeaderResolver;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -20,7 +21,10 @@ use RuntimeException;
 
 class DigitalOrderController extends Controller
 {
-    public function __construct(protected DigitalOrderService $service) {}
+    public function __construct(
+        protected DigitalOrderService $service,
+        protected CountryHeaderResolver $countryHeaderResolver
+    ) {}
 
     /**
      * Listing of the authenticated user's digital orders.
@@ -94,8 +98,30 @@ class DigitalOrderController extends Controller
     {
         $user = $request->user();
         $digitalProduct = DigitalProduct::query()->findOrFail((int) $request->validated('digital_product_id'));
+        $country = $request->attributes->get('resolved_country');
+        $countryResult = ['error' => null];
+        if (! $country) {
+            $countryResult = $this->countryHeaderResolver->resolve($request);
+            $country = $countryResult['country'] ?? null;
+        }
+        if (! $country) {
+            return response()->json([
+                'success' => false,
+                'message' => $countryResult['error'] ?? __('Country header is required.'),
+                'errors' => [
+                    'country_header' => [$countryResult['error'] ?? __('Country header is required.')],
+                ],
+            ], 422);
+        }
 
-        $order = $this->service->createSingleProductOrder($user, $digitalProduct, (string) $request->ip());
+        $order = $this->service->createSingleProductOrder(
+            $user,
+            $digitalProduct,
+            (string) $request->ip(),
+            (int) $request->validated('state_id'),
+            (int) $request->validated('city_id'),
+            (int) $country->id
+        );
 
         return response()->json([
             'message' => __('Order created. Please check your email to confirm your IP address.'),
@@ -184,11 +210,11 @@ class DigitalOrderController extends Controller
                 'customer_phone' => $user->phone ?? null,
                 'customer_email' => $user->email ?? null,
                 'currency_code' => 'KWD',
-                'shipping_cost' => 0,
+                'shipping_cost' => (float) ($order->shipping_cost ?? 0),
                 'coupon_amount' => 0,
                 'wallet_amount' => 0,
                 'subtotal' => (float) ($order->total ?? 0),
-                'total_amount' => (float) ($order->total_cost ?? $order->total ?? 0),
+                'total_amount' => (float) ($order->total_cost ?? ((float) ($order->total ?? 0) + (float) ($order->shipping_cost ?? 0))),
                 'provider' => $paymentMethod,
                 'status' => Invoice::STATUS_PENDING,
                 'provider_payload' => [
