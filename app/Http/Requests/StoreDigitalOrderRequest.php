@@ -23,6 +23,8 @@ class StoreDigitalOrderRequest extends FormRequest
     {
         return [
             'digital_product_id' => ['required', 'integer', 'exists:digital_products,id'],
+            'state_id' => ['required', 'integer', 'exists:states,id'],
+            'city_id' => ['required', 'integer', 'exists:cities,id'],
         ];
     }
 }

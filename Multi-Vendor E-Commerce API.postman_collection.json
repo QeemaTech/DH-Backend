@@ -2821,11 +2821,16 @@
                 "key": "Content-Type",
                 "value": "application/json",
                 "type": "text"
+              },
+              {
+                "key": "X-Country",
+                "value": "KW",
+                "type": "text"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"address_id\": 1\n}",
+              "raw": "{\n  \"address_id\": 1,\n  \"state_id\": 5,\n  \"city_id\": 12\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -2866,6 +2871,11 @@
                 "key": "Accept",
                 "value": "application/json",
                 "type": "text"
+              },
+              {
+                "key": "X-Country",
+                "value": "KW",
+                "type": "text"
               }
             ],
             "body": {
@@ -2877,6 +2887,18 @@
                   "description": "required|exists:address,id",
                   "type": "text",
                   "uuid": "9a5f993c-b897-4c53-bb67-e37fed65e4ad"
+                },
+                {
+                  "key": "city_id",
+                  "value": "12",
+                  "description": "required|exists:cities,id",
+                  "type": "text"
+                },
+                {
+                  "key": "state_id",
+                  "value": "5",
+                  "description": "required|exists:states,id",
+                  "type": "text"
                 },
                 {
                   "key": "coupon_code",

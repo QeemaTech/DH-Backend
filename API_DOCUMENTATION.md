@@ -612,6 +612,7 @@ Update the authenticated user's password.
 ```
 Authorization: Bearer {token}
 Content-Type: application/json
+X-Country: KW
 ```
 
 **Request Body:**
@@ -1765,6 +1766,8 @@ Content-Type: application/json
 ```json
 {
   "address_id": 1,
+  "state_id": 5,
+  "city_id": 12,
   "coupon_code": "SAVE10",
   "use_wallet": true,
   "use_points": true,
@@ -1774,6 +1777,8 @@ Content-Type: application/json
 
 **Validation Rules:**
 - `address_id` (required, integer, exists:addresses,id): Delivery address ID
+- `state_id` (required, integer, exists:states,id): State ID (must belong to `X-Country`)
+- `city_id` (required, integer, exists:cities,id): City ID for shipping-cost calculation (must belong to `X-Country`)
 - `coupon_code` (nullable, string, exists:coupons,code): Coupon code to apply
 - `use_wallet` (nullable, boolean): Whether to use available wallet balance
 - `use_points` (nullable, boolean): Whether to use available points
@@ -1810,7 +1815,7 @@ Content-Type: application/json
 **Important Notes:**
 - The cart is automatically cleared after successful order creation
 - Order discount is calculated automatically from product discounts
-- Shipping cost is calculated based on the delivery address
+- Shipping cost is calculated from the selected city shipping cost
 - If `use_wallet` or `use_points` is true, all available balance/points are used
 
 ---
@@ -1828,17 +1833,22 @@ Calculate shipping costs for the cart without creating an order.
 ```
 Authorization: Bearer {token}
 Content-Type: application/json
+X-Country: KW
 ```
 
 **Request Body:**
 ```json
 {
-  "address_id": 1
+  "address_id": 1,
+  "state_id": 5,
+  "city_id": 12
 }
 ```
 
 **Validation Rules:**
 - `address_id` (required, integer, exists:addresses,id): Delivery address ID
+- `state_id` (required, integer, exists:states,id): State ID (must belong to `X-Country`)
+- `city_id` (required, integer, exists:cities,id): City ID for shipping-cost calculation (must belong to `X-Country`)
 
 **Success Response (200):**
 ```json
@@ -1865,6 +1875,7 @@ Content-Type: application/json
 **Important Notes:**
 - This endpoint does not create an order, it only calculates shipping costs
 - Useful for displaying shipping costs before order placement
+- Country header is required to scope city validation (`X-Country`, `X-Country-Code`, `Country`, or `country`)
 
 ---
 

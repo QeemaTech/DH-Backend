@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\SettingController;
 use App\Http\Controllers\Api\VendorController;
 use App\Http\Controllers\Api\ContactMessageController;
 use App\Http\Controllers\Api\FraudReportController;
+use App\Http\Controllers\Api\ShippingLocationController;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -137,9 +138,11 @@ Route::group(['middleware' => 'locale'], function () {
         // orders (user) with rate limiting
         Route::apiResource('orders', OrderController::class)->only(['index', 'show']);
         Route::post('orders', [OrderController::class, 'store'])
+            ->middleware('country.header')
             // ->middleware('throttle:10,1')
             ->name('api.orders.store');
         Route::post('orders/calculate-shipping', [OrderController::class, 'calculateShipping'])
+            ->middleware('country.header')
             ->middleware('throttle:30,1')
             ->name('api.orders.calculate-shipping');
         Route::post('orders/{order}/cancel', [OrderController::class, 'cancel'])
@@ -193,6 +196,15 @@ Route::group(['middleware' => 'locale'], function () {
         Route::post('notifications/read-all', [NotificationController::class, 'markAllAsRead'])
             ->middleware('throttle:10,1')
             ->name('api.notifications.read-all');
+
+        // Checkout geo selectors (country header is required)
+        Route::middleware('country.header')->group(function () {
+            Route::get('checkout/states', [ShippingLocationController::class, 'states'])->name('api.checkout.states');
+            Route::get('checkout/cities', [ShippingLocationController::class, 'cities'])->name('api.checkout.cities');
+            Route::get('checkout/cities/{city}', [ShippingLocationController::class, 'city'])
+                ->whereNumber('city')
+                ->name('api.checkout.cities.show');
+        });
     });
     
     // FAQs (public)
@@ -201,6 +213,15 @@ Route::group(['middleware' => 'locale'], function () {
     
     // Settings (public)
     Route::get('/settings', [SettingController::class, 'index'])->name('api.settings.index');
+
+    // Shipping locations (public read endpoints; country header is required)
+    Route::middleware('country.header')->group(function () {
+        Route::get('/shipping/states', [ShippingLocationController::class, 'states'])->name('api.shipping.states');
+        Route::get('/shipping/cities', [ShippingLocationController::class, 'cities'])->name('api.shipping.cities');
+        Route::get('/shipping/cities/{city}', [ShippingLocationController::class, 'city'])
+            ->whereNumber('city')
+            ->name('api.shipping.cities.show');
+    });
     
     // Contact us (public)
     Route::post('/contact-us', [ContactMessageController::class, 'store'])->middleware('throttle:10,1')->name('api.contact-us.store');
@@ -218,7 +239,7 @@ Route::group(['middleware' => 'locale'], function () {
     Route::apiResource('/digital-categories', DigitalCategoryController::class)->only(['index', 'show']);
     
     Route::post('/digital-orders', [DigitalOrderController::class, 'store'])
-        ->middleware('auth:sanctum')
+        ->middleware(['auth:sanctum', 'country.header'])
         ->name('api.digital-orders.store');
         
     Route::post('/digital-orders/{digitalOrder}/provider-order-test', [DigitalOrderController::class, 'providerOrderTest'])
@@ -251,4 +272,3 @@ Route::group(['middleware' => 'locale'], function () {
 Route::post('sadad/webhook', [\App\Http\Controllers\PaymentController::class, 'SadadWebhook']);
 Route::post('tabby/webhook', [\App\Http\Controllers\PaymentController::class, 'TabbyWebhook']);
 Route::post('dema/webhook', [\App\Http\Controllers\PaymentController::class, 'DemaWebhook']);
-

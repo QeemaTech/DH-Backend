@@ -8,6 +8,7 @@ use App\Models\Coupon;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Services\OrderService;
+use App\Support\CountryHeaderResolver;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -16,7 +17,10 @@ use Illuminate\Support\Facades\DB;
 
 class OrderController extends Controller
 {
-    public function __construct(protected OrderService $service) {}
+    public function __construct(
+        protected OrderService $service,
+        protected CountryHeaderResolver $countryHeaderResolver
+    ) {}
 
     /**
      * Display a listing of the authenticated user's orders.
@@ -89,10 +93,33 @@ class OrderController extends Controller
 
         $validated = $request->validate([
             'address_id' => ['required', 'integer', 'exists:addresses,id'],
+            'state_id' => ['required', 'integer', 'exists:states,id'],
+            'city_id' => ['required', 'integer', 'exists:cities,id'],
         ]);
+        $country = $request->attributes->get('resolved_country');
+        $countryResult = ['error' => null];
+        if (! $country) {
+            $countryResult = $this->countryHeaderResolver->resolve($request);
+            $country = $countryResult['country'] ?? null;
+        }
+        if (! $country) {
+            return response()->json([
+                'success' => false,
+                'message' => $countryResult['error'] ?? __('Country header is required.'),
+                'errors' => [
+                    'country_header' => [$countryResult['error'] ?? __('Country header is required.')],
+                ],
+            ], 422);
+        }
 
         try {
-            $shippingData = $this->service->calculateShippingCost($user->id, $validated['address_id']);
+            $shippingData = $this->service->calculateShippingCost(
+                $user->id,
+                $validated['address_id'],
+                (int) $validated['state_id'],
+                (int) $validated['city_id'],
+                (int) $country->id
+            );
 
             return response()->json([
                 'success' => true,
@@ -125,7 +152,24 @@ class OrderController extends Controller
             'use_points' => ['nullable', 'boolean'],
             'notes' => ['nullable', 'string'],
             'address_id' => ['required', 'integer', 'exists:addresses,id'],
+            'state_id' => ['required', 'integer', 'exists:states,id'],
+            'city_id' => ['required', 'integer', 'exists:cities,id'],
         ]);
+        $country = $request->attributes->get('resolved_country');
+        $countryResult = ['error' => null];
+        if (! $country) {
+            $countryResult = $this->countryHeaderResolver->resolve($request);
+            $country = $countryResult['country'] ?? null;
+        }
+        if (! $country) {
+            return response()->json([
+                'success' => false,
+                'message' => $countryResult['error'] ?? __('Country header is required.'),
+                'errors' => [
+                    'country_header' => [$countryResult['error'] ?? __('Country header is required.')],
+                ],
+            ], 422);
+        }
         if (! empty($validated['coupon_code'])) {
             $coupon = Coupon::where('code', '=', $validated['coupon_code'], 'and')->first();
 
@@ -144,6 +188,7 @@ class OrderController extends Controller
             $validated['status'] = 'pending';
         }
 
+        $validated['country_id'] = (int) $country->id;
         $order = $this->service->createOrder($user->id, $validated);
 
         return response()->json([
