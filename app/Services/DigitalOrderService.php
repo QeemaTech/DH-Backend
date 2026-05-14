@@ -23,8 +23,67 @@ class DigitalOrderService
         protected OneCardService $oneCardService,
         protected Like4AppService $like4AppService,
     ) {}
+    
+    public function createSingleProductOrder(User $user, DigitalProduct $digitalProduct, string $ipAddress): DigitalOrder
+    {
+        if (! $digitalProduct->is_active || ! $digitalProduct->is_available) {
+            throw ValidationException::withMessages([
+                'digital_product_id' => [__('Digital product is not available.')],
+            ]);
+        }
 
-    public function createSingleProductOrder(
+        if (! $digitalProduct->isVisibleInCountry($user->country_id !== null ? (int) $user->country_id : null)) {
+            throw ValidationException::withMessages([
+                'digital_product_id' => [__('Digital product is not available in your country.')],
+            ]);
+        }
+
+        $this->assertUserProfileComplete($user);
+        $this->assertProviderAvailability($digitalProduct);
+
+        return DB::transaction(function () use ($user, $digitalProduct, $ipAddress) {
+            $countryCode = $user->country?->code ?? '';
+
+            $order = DigitalOrder::create([
+                'user_id' => $user->id,
+                'user_name' => (string) $user->name,
+                'user_email' => (string) $user->email,
+                'user_phone' => (string) $user->phone,
+                'user_gender' => (string) ($user->gender ?? ''),
+                'user_birth_date' => $user->birth_date,
+                'user_national_number' => (string) ($user->national_number ?? ''),
+                'user_national_cart_front_image' => (string) ($user->getRawOriginal('national_cart_front_image') ?? ''),
+                'user_national_cart_back_image' => (string) ($user->getRawOriginal('national_cart_back_image') ?? ''),
+                'user_national_id_expire_date' => $user->national_id_expire_date,
+                'user_home_address' => (string) ($user->home_address ?? ''),
+                'user_ip_address' => $ipAddress,
+                'user_country' => $countryCode !== '' ? $countryCode : (string) ($user->country_id ?? ''),
+                'payment_status' => 'pending',
+                'status' => 'pending',
+                'notes' => '',
+                'total' => $digitalProduct->price,
+                'discount' => 0,
+                'shipping_cost' => 0,
+                'total_cost' => $digitalProduct->price,
+            ]);
+
+            DigitalOrderItem::create([
+                'digital_order_id' => $order->id,
+                'digital_product_id' => $digitalProduct->id,
+                'price' => $digitalProduct->price,
+                'quantity' => 1,
+                'total' => $digitalProduct->price,
+                'notes' => null,
+            ]);
+
+            DB::afterCommit(function () use ($order) {
+                $this->sendIpConfirmationMail($order);
+            });
+
+            return $order->loadMissing(['items.digitalProduct']);
+        });
+    }
+    /*public function createSingleProductOrder(
         User $user,
         DigitalProduct $digitalProduct,
         string $ipAddress,
@@ -112,7 +171,7 @@ class DigitalOrderService
 
             return $order->loadMissing(['items.digitalProduct']);
         });
-    }
+    }*/
 
     /**
      * Test helper: place the provider order immediately (skips payment).

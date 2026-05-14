@@ -98,6 +98,20 @@ class DigitalOrderController extends Controller
     {
         $user = $request->user();
         $digitalProduct = DigitalProduct::query()->findOrFail((int) $request->validated('digital_product_id'));
+
+        $order = $this->service->createSingleProductOrder($user, $digitalProduct, (string) $request->ip());
+
+        return response()->json([
+            'message' => __('Order created. Please check your email to confirm your IP address.'),
+            'order_id' => $order->id,
+            'payment_link' => null,
+        ]);
+    }
+
+    /*public function store(StoreDigitalOrderRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $digitalProduct = DigitalProduct::query()->findOrFail((int) $request->validated('digital_product_id'));
         $country = $request->attributes->get('resolved_country');
         $countryResult = ['error' => null];
         if (! $country) {
@@ -128,7 +142,7 @@ class DigitalOrderController extends Controller
             'order_id' => $order->id,
             'payment_link' => null,
         ]);
-    }
+    }*/
 
     /**
      * Create/reuse a pending invoice then return a payment link.

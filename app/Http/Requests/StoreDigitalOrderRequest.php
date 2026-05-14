@@ -19,12 +19,19 @@ class StoreDigitalOrderRequest extends FormRequest
      *
      * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
+    /*public function rules(): array
     {
         return [
             'digital_product_id' => ['required', 'integer', 'exists:digital_products,id'],
             'state_id' => ['required', 'integer', 'exists:states,id'],
             'city_id' => ['required', 'integer', 'exists:cities,id'],
+        ];
+    }*/
+
+    public function rules(): array
+    {
+        return [
+            'digital_product_id' => ['required', 'integer', 'exists:digital_products,id'],
         ];
     }
 }
