@@ -19,7 +19,9 @@ class CountryController extends Controller
 
     public function update(UpdateCountryRequest $request, Country $country): RedirectResponse
     {
-        $country->verification_channel = $request->validated('verification_channel');
+        $verificationChannels = $request->validated('verification_channels');
+        $country->verification_channels = $verificationChannels;
+        $country->verification_channel = (string) ($verificationChannels[0] ?? 'sms');
         if ($request->has('is_active')) {
             $country->is_active = $request->boolean('is_active');
         }

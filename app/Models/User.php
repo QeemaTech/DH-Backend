@@ -45,6 +45,7 @@ class User extends Authenticatable
         'national_cart_back_image',
         'national_id_expire_date',
         'home_address',
+        'ip_address',
     ];
 
     /**

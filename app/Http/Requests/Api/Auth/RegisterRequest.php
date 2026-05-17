@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Api\Auth;
 
-use App\Enums\VerificationChannel;
 use App\Models\Country;
 use App\Models\User;
 use Illuminate\Foundation\Http\FormRequest;
@@ -61,7 +60,7 @@ class RegisterRequest extends FormRequest
             }
 
             $country = Country::query()->find($countryId);
-            if ($country && $country->verification_channel === VerificationChannel::Email && empty($this->input('email'))) {
+            if ($country && in_array('email', $country->getVerificationChannels(), true) && empty($this->input('email'))) {
                 $validator->errors()->add('email', __('The email field is required for the selected country.'));
             }
         });
