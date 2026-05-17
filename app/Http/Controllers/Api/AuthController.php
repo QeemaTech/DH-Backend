@@ -321,13 +321,6 @@ class AuthController extends Controller
         $user = User::query()->find($id);
 
         if (! $user || ! hash_equals((string) $hash, sha1((string) $user->getEmailForVerification()))) {
-            if ($request->expectsJson() || $request->is('api/*')) {
-                return response()->json([
-                    'success' => false,
-                    'message' => __('The verification link is invalid.'),
-                ], 422);
-            }
-
             return redirect()->route('email-verification.failed');
         }
 
@@ -336,18 +329,6 @@ class AuthController extends Controller
             $user->is_verified = true;
             $user->ip_address = (string) $request->ip();
             $user->save();
-        }
-
-        if ($request->expectsJson() || $request->is('api/*')) {
-            return response()->json([
-                'success' => true,
-                'message' => __('Email verified successfully.'),
-                'data' => [
-                    'user_id' => $user->id,
-                    'email_verified_at' => $user->email_verified_at?->toIso8601String(),
-                    'ip_address' => $user->ip_address,
-                ],
-            ]);
         }
 
         return redirect()->route('email-verification.success');
