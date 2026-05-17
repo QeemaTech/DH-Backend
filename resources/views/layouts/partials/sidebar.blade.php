@@ -98,6 +98,12 @@
                                 <span>{{ __('Digital Products') }}</span>
                             </a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ request()->routeIs('admin.digital-product-purchase-limits*') ? 'active' : '' }}" href="{{ route('admin.digital-product-purchase-limits.index') }}">
+                                <i class="bi bi-sliders"></i>
+                                <span>{{ __('Digital Product Purchase Limits') }}</span>
+                            </a>
+                        </li>
 
                         <li class="nav-item mt-3">
                             <small class="text-muted px-3 text-uppercase fw-bold">{{ __('Vendors & Customers') }}</small>

@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\OrderRefundController;
 use App\Http\Controllers\Api\PasswordController;
 use App\Http\Controllers\Api\DigitalProductController;
+use App\Http\Controllers\Api\DigitalProductPurchaseLimitController;
 use App\Http\Controllers\Api\DigitalCategoryController;
 use App\Http\Controllers\Api\DigitalOrderController;
 use App\Http\Controllers\Api\ProductController;
@@ -214,6 +215,8 @@ Route::group(['middleware' => 'locale'], function () {
     Route::apiResource('/products', ProductController::class)->only(['index', 'show']);
     Route::apiResource('/digital-products', DigitalProductController::class)->only(['index', 'show']);
     Route::apiResource('/digital-categories', DigitalCategoryController::class)->only(['index', 'show']);
+    Route::get('/digital-product-purchase-limits', [DigitalProductPurchaseLimitController::class, 'index'])
+        ->name('api.digital-product-purchase-limits.index');
     
     Route::post('/digital-orders', [DigitalOrderController::class, 'store'])
         ->middleware('auth:sanctum')
