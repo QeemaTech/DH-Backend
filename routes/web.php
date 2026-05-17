@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CityController;
 use App\Http\Controllers\Admin\CustomerController;
 use App\Http\Controllers\Admin\DigitalCategoryController;
 use App\Http\Controllers\Admin\DigitalMerchantController;
+use App\Http\Controllers\Admin\DigitalProductPurchaseLimitController;
 use App\Http\Controllers\Admin\DigitalProductController;
 use App\Http\Controllers\Admin\DigitalSubCategoryController;
 use App\Http\Controllers\Admin\ProductRatingController;
@@ -96,6 +97,8 @@ Route::group(['middleware' => 'locale'], function () {
             Route::resource('digital-sub-categories', DigitalSubCategoryController::class);
             Route::resource('digital-merchants', DigitalMerchantController::class)->only(['index', 'show']);
             Route::resource('digital-products', DigitalProductController::class)->only(['index', 'show']);
+            Route::resource('digital-product-purchase-limits', DigitalProductPurchaseLimitController::class)->except(['show']);
+            Route::post('digital-product-purchase-limits/{digitalProductPurchaseLimit}/toggle-active', [DigitalProductPurchaseLimitController::class, 'toggleActive'])->name('digital-product-purchase-limits.toggle-active');
             Route::post('digital-products/{digitalProduct}/assign-category', [DigitalProductController::class, 'assignCategory'])->name('digital-products.assign-category');
             Route::post('digital-products/{digitalProduct}/sync-countries', [DigitalProductController::class, 'syncCountries'])->name('digital-products.sync-countries');
             Route::post('digital-products/{digitalProduct}/toggle-active', [DigitalProductController::class, 'toggleActive'])->name('digital-products.toggle-active');

@@ -22,6 +22,7 @@ class DigitalOrderService
         protected EezeePayService $eezeePayService,
         protected OneCardService $oneCardService,
         protected Like4AppService $like4AppService,
+        protected DigitalProductPurchaseLimitService $purchaseLimitService,
     ) {}
     
     public function createSingleProductOrder(User $user, DigitalProduct $digitalProduct, string $ipAddress): DigitalOrder
@@ -42,6 +43,11 @@ class DigitalOrderService
         $this->assertProviderAvailability($digitalProduct);
 
         return DB::transaction(function () use ($user, $digitalProduct, $ipAddress) {
+            // Lock user row so concurrent requests by the same user are serialized.
+            $lockedUser = User::query()->whereKey($user->id)->lockForUpdate()->firstOrFail();
+
+            $this->purchaseLimitService->assertPurchaseLimit($lockedUser, (float) $digitalProduct->price);
+
             $countryCode = $user->country?->code ?? '';
 
             $order = DigitalOrder::create([

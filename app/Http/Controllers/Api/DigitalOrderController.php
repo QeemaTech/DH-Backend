@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Exceptions\DigitalProductPurchaseLimitException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\IndexDigitalOrdersRequest;
 use App\Http\Requests\PayDigitalOrderRequest;
@@ -99,7 +100,20 @@ class DigitalOrderController extends Controller
         $user = $request->user();
         $digitalProduct = DigitalProduct::query()->findOrFail((int) $request->validated('digital_product_id'));
 
-        $order = $this->service->createSingleProductOrder($user, $digitalProduct, (string) $request->ip());
+        try {
+            $order = $this->service->createSingleProductOrder($user, $digitalProduct, (string) $request->ip());
+        } catch (DigitalProductPurchaseLimitException $e) {
+            $response = [
+                'success' => false,
+                'message' => $e->getMessage(),
+            ];
+
+            if (! empty($e->responseData())) {
+                $response['data'] = $e->responseData();
+            }
+
+            return response()->json($response, $e->statusCode());
+        }
 
         return response()->json([
             'message' => __('Order created. Please check your email to confirm your IP address.'),
