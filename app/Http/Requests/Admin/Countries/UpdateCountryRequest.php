@@ -2,7 +2,6 @@
 
 namespace App\Http\Requests\Admin\Countries;
 
-use App\Enums\VerificationChannel;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -22,7 +21,8 @@ class UpdateCountryRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'verification_channel' => ['required', Rule::enum(VerificationChannel::class)],
+            'verification_channels' => ['required', 'array', 'min:1'],
+            'verification_channels.*' => ['required', Rule::in(['sms', 'whatsapp', 'email'])],
             'is_active' => ['sometimes', 'boolean'],
         ];
     }

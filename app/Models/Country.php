@@ -2,11 +2,11 @@
 
 namespace App\Models;
 
-use App\Enums\VerificationChannel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 
 class Country extends Model
 {
@@ -17,7 +17,9 @@ class Country extends Model
         'code',
         'name',
         'dial_code',
+        'flag',
         'verification_channel',
+        'verification_channels',
         'is_active',
         'sort_order',
     ];
@@ -26,9 +28,31 @@ class Country extends Model
     {
         return [
             'name' => 'array',
-            'verification_channel' => VerificationChannel::class,
+            'verification_channels' => 'array',
             'is_active' => 'boolean',
         ];
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    public function getVerificationChannels(): array
+    {
+        $channels = $this->verification_channels;
+        if (is_array($channels) && $channels !== []) {
+            return array_values(array_unique(array_filter($channels, fn ($value) => in_array($value, ['sms', 'whatsapp', 'email'], true))));
+        }
+
+        $legacy = (string) $this->verification_channel;
+
+        return in_array($legacy, ['sms', 'whatsapp', 'email'], true) ? [$legacy] : ['sms'];
+    }
+
+    protected function flag(): Attribute
+    {
+        return Attribute::make(
+            get: fn ($value) => $value ? asset('storage/'.$value) : null
+        );
     }
 
     public function products(): BelongsToMany

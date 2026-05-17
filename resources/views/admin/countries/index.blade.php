@@ -28,6 +28,7 @@
                         <thead class="table-light">
                             <tr>
                                 <th>{{ __('Code') }}</th>
+                                <th>{{ __('Flag') }}</th>
                                 <th>{{ __('Name') }}</th>
                                 <th>{{ __('Dial code') }}</th>
                                 <th>{{ __('Verification & status') }}</th>
@@ -37,26 +38,37 @@
                             @foreach ($countries as $country)
                                 <tr>
                                     <td class="fw-semibold">{{ $country->code }}</td>
+                                    <td>
+                                        @if($country->flag)
+                                            <img src="{{ $country->flag }}" alt="flag" style="width: 42px; height: 28px; object-fit: cover; border-radius: 4px;">
+                                        @else
+                                            -
+                                        @endif
+                                    </td>
                                     <td>{{ $country->name[app()->getLocale()] ?? $country->name['en'] ?? $country->code }}</td>
                                     <td>{{ $country->dial_code }}</td>
                                     <td>
                                         <form action="{{ route('admin.countries.update', $country) }}" method="POST" class="row g-2 align-items-end">
                                             @csrf
                                             @method('PUT')
-                                            <div class="col-md-5">
+                                            <div class="col-md-4">
                                                 <label class="form-label small text-muted mb-0">{{ __('Channel') }}</label>
-                                                <select name="verification_channel" class="form-select form-select-sm" required>
-                                                    @foreach (\App\Enums\VerificationChannel::cases() as $channel)
-                                                        <option value="{{ $channel->value }}" @selected($country->verification_channel === $channel)>
-                                                            {{ strtoupper($channel->value) }}
-                                                        </option>
-                                                    @endforeach
+                                                @php
+                                                    $selectedChannels = old('verification_channels', $country->getVerificationChannels());
+                                                @endphp
+                                                <select name="verification_channels[]" class="form-select form-select-sm" data-channel-multiselect multiple required>
+                                                    <option value="sms" @selected(in_array('sms', $selectedChannels, true))>SMS</option>
+                                                    <option value="whatsapp" @selected(in_array('whatsapp', $selectedChannels, true))>WHATSAPP</option>
+                                                    <option value="email" @selected(in_array('email', $selectedChannels, true))>EMAIL</option>
                                                 </select>
-                                                @error('verification_channel')
+                                                @error('verification_channels')
+                                                    <div class="text-danger small">{{ $message }}</div>
+                                                @enderror
+                                                @error('verification_channels.*')
                                                     <div class="text-danger small">{{ $message }}</div>
                                                 @enderror
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-3">
                                                 <div class="form-check form-switch mt-3">
                                                     <input class="form-check-input" type="checkbox" name="is_active" value="1" id="active_{{ $country->id }}"
                                                         @checked($country->is_active)>
@@ -78,3 +90,27 @@
         </div>
     </div>
 @endsection
+
+@push('styles')
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+@endpush
+
+@push('scripts')
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('[data-channel-multiselect]').forEach(function (element) {
+                if (!element.tomselect) {
+                    new TomSelect(element, {
+                        plugins: ['remove_button'],
+                        create: false,
+                        maxItems: null,
+                        hideSelected: true,
+                        closeAfterSelect: false
+                    });
+                }
+            });
+        });
+    </script>
+@endpush
+

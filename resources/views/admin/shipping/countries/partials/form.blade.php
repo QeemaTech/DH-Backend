@@ -28,16 +28,28 @@
         @error('dial_code')<div class="invalid-feedback">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-4">
+        <label class="form-label">{{ __('Flag') }}</label>
+        <input type="file" name="flag" class="form-control @error('flag') is-invalid @enderror" accept="image/*">
+        @error('flag')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        @if($country && $country->flag)
+            <div class="mt-2">
+                <img src="{{ $country->flag }}" alt="flag" style="width: 42px; height: 28px; object-fit: cover; border-radius: 4px;">
+            </div>
+        @endif
+    </div>
+    <div class="col-md-4">
         <label class="form-label">{{ __('messages.shipping_ui.verification_channel') }}</label>
-        <select name="verification_channel" class="form-select @error('verification_channel') is-invalid @enderror" required>
-            @foreach (\App\Enums\VerificationChannel::cases() as $channel)
-                @php
-                    $selected = old('verification_channel', (string) ($country->verification_channel->value ?? $country->verification_channel ?? \App\Enums\VerificationChannel::Sms->value));
-                @endphp
-                <option value="{{ $channel->value }}" @selected($selected === $channel->value)>{{ strtoupper($channel->value) }}</option>
-            @endforeach
+        @php
+            $selectedChannels = old('verification_channels', $country?->getVerificationChannels() ?? ['sms']);
+        @endphp
+        <select name="verification_channels[]" class="form-select @error('verification_channels') is-invalid @enderror"
+                data-channel-multiselect multiple required>
+            <option value="sms" @selected(in_array('sms', $selectedChannels, true))>SMS</option>
+            <option value="whatsapp" @selected(in_array('whatsapp', $selectedChannels, true))>WHATSAPP</option>
+            <option value="email" @selected(in_array('email', $selectedChannels, true))>EMAIL</option>
         </select>
-        @error('verification_channel')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        @error('verification_channels')<div class="invalid-feedback">{{ $message }}</div>@enderror
+        @error('verification_channels.*')<div class="invalid-feedback d-block">{{ $message }}</div>@enderror
     </div>
     <div class="col-md-2">
         <label class="form-label">{{ __('messages.shipping_ui.sort_order') }}</label>
@@ -59,3 +71,4 @@
     <button type="submit" class="btn btn-primary">{{ __('messages.shipping_ui.save') }}</button>
     <a href="{{ route('admin.shipping-countries.index') }}" class="btn btn-outline-secondary">{{ __('messages.shipping_ui.cancel') }}</a>
 </div>
+

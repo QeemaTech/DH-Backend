@@ -54,6 +54,7 @@
                     <thead>
                     <tr>
                         <th>{{ __('messages.shipping_ui.code') }}</th>
+                        <th>{{ __('Flag') }}</th>
                         <th>{{ __('messages.shipping_ui.name') }}</th>
                         <th>{{ __('messages.shipping_ui.dial_code') }}</th>
                         <th>{{ __('messages.shipping_ui.channel') }}</th>
@@ -66,15 +67,20 @@
                     @forelse($countries as $country)
                         <tr>
                             <td class="fw-semibold">{{ $country->code }}</td>
+                            <td>
+                                @if($country->flag)
+                                    <img src="{{ $country->flag }}" alt="flag" style="width: 42px; height: 28px; object-fit: cover; border-radius: 4px;">
+                                @else
+                                    -
+                                @endif
+                            </td>
                             <td>{{ $country->name[app()->getLocale()] ?? $country->name['en'] ?? '-' }}</td>
                             <td>{{ $country->dial_code ?: '-' }}</td>
                             <td>
                                 @php
-                                    $channelValue = is_object($country->verification_channel)
-                                        ? (string) $country->verification_channel->value
-                                        : (string) $country->verification_channel;
+                                    $channels = $country->getVerificationChannels();
                                 @endphp
-                                {{ strtoupper($channelValue) }}
+                                {{ strtoupper(implode(', ', $channels)) }}
                             </td>
                             <td>
                                 @if($country->is_active)

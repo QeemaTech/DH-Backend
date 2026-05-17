@@ -8,6 +8,7 @@ use App\Http\Requests\Admin\Countries\UpdateRequest;
 use App\Models\Country;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ShippingCountryController extends Controller
@@ -45,6 +46,11 @@ class ShippingCountryController extends Controller
     public function store(CreateRequest $request): RedirectResponse
     {
         $data = $request->validated();
+        $flagPath = null;
+        if ($request->hasFile('flag')) {
+            $flagPath = $request->file('flag')->store('countries/flags', 'public');
+        }
+
         Country::query()->create([
             'code' => strtoupper((string) $data['code']),
             'name' => [
@@ -52,7 +58,9 @@ class ShippingCountryController extends Controller
                 'ar' => (string) $data['name_ar'],
             ],
             'dial_code' => $data['dial_code'] ?? null,
-            'verification_channel' => $data['verification_channel'],
+            'flag' => $flagPath,
+            'verification_channels' => $data['verification_channels'],
+            'verification_channel' => (string) ($data['verification_channels'][0] ?? 'sms'),
             'is_active' => (bool) ($data['is_active'] ?? true),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
         ]);
@@ -72,6 +80,14 @@ class ShippingCountryController extends Controller
     public function update(UpdateRequest $request, Country $shipping_country): RedirectResponse
     {
         $data = $request->validated();
+        $flagPath = $shipping_country->getRawOriginal('flag');
+        if ($request->hasFile('flag')) {
+            if ($flagPath && Storage::disk('public')->exists($flagPath)) {
+                Storage::disk('public')->delete($flagPath);
+            }
+            $flagPath = $request->file('flag')->store('countries/flags', 'public');
+        }
+
         $shipping_country->update([
             'code' => strtoupper((string) $data['code']),
             'name' => [
@@ -79,7 +95,9 @@ class ShippingCountryController extends Controller
                 'ar' => (string) $data['name_ar'],
             ],
             'dial_code' => $data['dial_code'] ?? null,
-            'verification_channel' => $data['verification_channel'],
+            'flag' => $flagPath,
+            'verification_channels' => $data['verification_channels'],
+            'verification_channel' => (string) ($data['verification_channels'][0] ?? 'sms'),
             'is_active' => (bool) ($data['is_active'] ?? false),
             'sort_order' => (int) ($data['sort_order'] ?? 0),
         ]);
@@ -91,6 +109,11 @@ class ShippingCountryController extends Controller
 
     public function destroy(Country $shipping_country): RedirectResponse
     {
+        $flagPath = $shipping_country->getRawOriginal('flag');
+        if ($flagPath && Storage::disk('public')->exists($flagPath)) {
+            Storage::disk('public')->delete($flagPath);
+        }
+
         $shipping_country->delete();
 
         return redirect()
@@ -98,4 +121,3 @@ class ShippingCountryController extends Controller
             ->with('success', __('Country deleted successfully.'));
     }
 }
-
