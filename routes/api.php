@@ -53,6 +53,9 @@ Route::post('/auth/verify-phone', [AuthController::class, 'verifyPhone'])
 Route::post('/auth/resend-verification-code', [AuthController::class, 'resendVerificationCode'])
     // ->middleware('throttle:3,1')
     ->name('api.resend-verification-code');
+Route::get('/auth/verify-email/{id}/{hash}', [AuthController::class, 'verifyEmailByLink'])
+    ->middleware(['signed', 'throttle:6,1'])
+    ->name('api.auth.verify-email-link');
 
 Route::get('/countries', [CountryController::class, 'index'])
     ->middleware('locale')

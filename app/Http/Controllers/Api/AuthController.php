@@ -13,6 +13,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
@@ -34,23 +35,42 @@ class AuthController extends Controller
                 $referredBy->increment('points', setting('referral_points', 0));
             }
         }
-        $user = User::create([
-            'name' => $validated['name'],
-            'country_id' => $validated['country_id'],
-            'email' => $validated['email'] ?? null,
-            'phone' => $validated['phone'],
-            'password' => Hash::make($validated['password']),
-            'is_active' => true,
-            'is_verified' => false,
-            'referred_by_id' => $referredById,
-            'gender' => $validated['gender'] ?? null,
-            'birth_date' => $validated['birth_date'] ?? null,
-            'national_number' => $validated['national_number'] ?? null,
-            'national_id_expire_date' => $validated['national_id_expire_date'] ?? null,
-            'home_address' => $validated['home_address'] ?? null,
-        ]);
-        $user->assignRole('user');
-        $this->accountVerification->sendForNewUser($user);
+        try {
+            $registration = DB::transaction(function () use ($validated, $referredById) {
+                $user = User::create([
+                    'name' => $validated['name'],
+                    'country_id' => $validated['country_id'],
+                    'email' => $validated['email'] ?? null,
+                    'phone' => $validated['phone'],
+                    'password' => Hash::make($validated['password']),
+                    'is_active' => true,
+                    'is_verified' => false,
+                    'referred_by_id' => $referredById,
+                    'gender' => $validated['gender'] ?? null,
+                    'birth_date' => $validated['birth_date'] ?? null,
+                    'national_number' => $validated['national_number'] ?? null,
+                    'national_id_expire_date' => $validated['national_id_expire_date'] ?? null,
+                    'home_address' => $validated['home_address'] ?? null,
+                ]);
+                $user->assignRole('user');
+                $dispatch = $this->accountVerification->sendForNewUser($user);
+
+                return [
+                    'user' => $user,
+                    'dispatch' => $dispatch,
+                ];
+            });
+        } catch (\InvalidArgumentException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], 422);
+        }
+
+        /** @var User $user */
+        $user = $registration['user'];
+        $dispatch = $registration['dispatch'];
+
         event(new Registered($user));
 
         // Load roles and permissions for the response
@@ -61,6 +81,7 @@ class AuthController extends Controller
             'message' => __('Registration successful. Please verify your account before logging in.'),
             'data' => [
                 'user' => new UserResource($user),
+                'verification_dispatch' => $dispatch,
             ],
         ], 201);
     }
@@ -161,7 +182,7 @@ class AuthController extends Controller
         }
 
         try {
-            $this->accountVerification->resend($user);
+            $dispatch = $this->accountVerification->resend($user);
         } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
@@ -171,7 +192,10 @@ class AuthController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => __('Verification code resent successfully.'),
+            'message' => __('Verification instructions sent successfully.'),
+            'data' => [
+                'verification_dispatch' => $dispatch,
+            ],
         ]);
     }
 
@@ -210,6 +234,7 @@ class AuthController extends Controller
 
         $user->is_verified = true;
         $user->email_verified_at = now();
+        $user->ip_address = (string) $request->ip();
         $user->save();
 
         $verification->delete();
@@ -270,6 +295,7 @@ class AuthController extends Controller
 
         $user->is_verified = true;
         $user->phone_verified_at = now();
+        $user->ip_address = (string) $request->ip();
         $user->save();
 
         $verification->markAsVerified();
@@ -288,5 +314,42 @@ class AuthController extends Controller
                 'token_type' => 'Bearer',
             ],
         ], 200);
+    }
+
+    public function verifyEmailByLink(Request $request, int $id, string $hash): JsonResponse|\Illuminate\Http\RedirectResponse
+    {
+        $user = User::query()->find($id);
+
+        if (! $user || ! hash_equals((string) $hash, sha1((string) $user->getEmailForVerification()))) {
+            if ($request->expectsJson() || $request->is('api/*')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => __('The verification link is invalid.'),
+                ], 422);
+            }
+
+            return redirect()->route('email-verification.failed');
+        }
+
+        if (! $user->hasVerifiedEmail()) {
+            $user->email_verified_at = now();
+            $user->is_verified = true;
+            $user->ip_address = (string) $request->ip();
+            $user->save();
+        }
+
+        if ($request->expectsJson() || $request->is('api/*')) {
+            return response()->json([
+                'success' => true,
+                'message' => __('Email verified successfully.'),
+                'data' => [
+                    'user_id' => $user->id,
+                    'email_verified_at' => $user->email_verified_at?->toIso8601String(),
+                    'ip_address' => $user->ip_address,
+                ],
+            ]);
+        }
+
+        return redirect()->route('email-verification.success');
     }
 }

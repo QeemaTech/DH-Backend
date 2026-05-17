@@ -20,6 +20,7 @@ class CountryResource extends JsonResource
             'name' => $this->name[$locale] ?? $this->name['en'] ?? $this->code,
             'name_translations' => $this->name,
             'dial_code' => $this->dial_code,
+            'flag' => $this->flag,
         ];
     }
 }

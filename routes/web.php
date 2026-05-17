@@ -314,6 +314,11 @@ Route::group(['middleware' => 'locale'], function () {
     // Locale/Language Routes
     Route::get('/locale/{locale}', [LocaleController::class, 'switch'])->name('locale.switch');
 
+    Route::get('/email-verification/success', fn () => view('auth.email-verification-success'))
+        ->name('email-verification.success');
+    Route::get('/email-verification/failed', fn () => view('auth.email-verification-failed'))
+        ->name('email-verification.failed');
+
     // Vendor Registration Routes (Public)
     Route::get('/vendor/register', [VendorController::class, 'showRegistrationForm'])->name('vendor.register');
     Route::post('/vendor/register', [VendorController::class, 'register'])->name('vendor.register.submit');

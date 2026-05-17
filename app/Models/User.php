@@ -2,7 +2,7 @@
 
 namespace App\Models;
 
-use Illuminate\Auth\Notifications\VerifyEmail as VerifyEmailNotification;
+use App\Notifications\ApiEmailVerificationLinkNotification;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -223,6 +223,6 @@ class User extends Authenticatable
      */
     public function sendEmailVerificationNotification(): void
     {
-        $this->notify(new VerifyEmailNotification);
+        $this->notify(new ApiEmailVerificationLinkNotification);
     }
 }
