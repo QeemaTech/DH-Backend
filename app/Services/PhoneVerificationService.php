@@ -19,8 +19,8 @@ class PhoneVerificationService
             throw new \InvalidArgumentException('User phone is missing.');
         }
 
-        $this->deliver($user, $code, function (string $phone, string $message): void {
-            $this->sms->send($phone, $message);
+        $this->deliver($user, $code, function (string $phone, string $message): array {
+            return $this->sms->send($phone, $message);
         });
     }
 
@@ -30,13 +30,13 @@ class PhoneVerificationService
             throw new \InvalidArgumentException('User phone is missing.');
         }
 
-        $this->deliver($user, $code, function (string $phone, string $message): void {
-            $this->whatsapp->send($phone, $message);
+        $this->deliver($user, $code, function (string $phone, string $message): array {
+            return $this->whatsapp->send($phone, $message);
         });
     }
 
     /**
-     * @param  callable(string,string):void  $sender
+     * @param  callable(string,string):array<string,mixed>  $sender
      */
     private function deliver(User $user, ?int $code, callable $sender): void
     {
@@ -57,6 +57,11 @@ class PhoneVerificationService
             'expires_at' => Carbon::now()->addMinutes(10),
         ]);
 
-        $sender($user->phone, __('Your verification code is: :code', ['code' => $code]));
+        $result = $sender($user->phone, __('Your verification code is: :code', ['code' => $code]));
+
+        if (! (bool) ($result['success'] ?? false)) {
+            $reason = (string) ($result['response'] ?? $result['body'] ?? __('Verification message could not be sent.'));
+            throw new \InvalidArgumentException($reason);
+        }
     }
 }
